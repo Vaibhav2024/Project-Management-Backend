@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { emailVerificationMailgenContent, forgotPasswordMailgenContent, sendEmail } from "../utils/mail.js";
 import crypto from 'crypto';
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
 
 const generateAccessAndRefreshToken = async (userId) => {
     try {
@@ -51,7 +51,7 @@ const registerUser = asyncHandler(async (req, res) => {
             subject: "Please verify your email",
             mailgenContent: emailVerificationMailgenContent(
                 user.username,
-                `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`
+                `${req.protocol}://${req.get("host")}/api/v1/auth/verify-email/${unHashedToken}`
                 // generating dynamic link:- req.protocol mean http or https, req.get("host") means the website domain address weather it is localhost or vaibhav.com and other is the route 
             )
         }
@@ -212,14 +212,14 @@ const resendEmailVerification = asyncHandler(async(req, res) => {
     user.emailVerificationToken = hashedToken;
     user.emailVerificationExpiry = tokenExpiry;
 
-    user.save({validateBeforeSave: false})
+    await user.save({validateBeforeSave: false})
 
     await sendEmail({
         email: user.email,
         subject: "Resending Verfication Email",
         mailgenContent: emailVerificationMailgenContent(
             user.username,
-            `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`
+            `${req.protocol}://${req.get("host")}/api/v1/auth/verify-email/${unHashedToken}`
         )
     });
 
@@ -264,12 +264,13 @@ const refreshAccessToken = asyncHandler(async(req, res) => {
             .cookie("accessToken", accessToken, options)
             .cookie("refreshToken", refreshToken, options)
             .json(
+                new ApiResponse(
                 200,
                 {
                     accessToken, refreshToken
                 },
                 "Access Token Generated Successfully"
-            )
+            ))
     } catch (error) {
         throw new ApiError(401, "Invalid refresh token")
     }
@@ -291,14 +292,14 @@ const forgotPassword = asyncHandler(async(req, res) => {
     user.forgotPasswordToken = hashedToken;
     user.forgotPasswordExpiry = tokenExpiry;
 
-    user.save({validateBeforeSave: false})
+    await user.save({validateBeforeSave: false})
 
     await sendEmail({
         email: user.email,
         subject: "Reset Your Account Password",
         mailgenContent: forgotPasswordMailgenContent(
             user.username,
-            `${process.env.FORGOT_PASSWORD_REDIRECT_URL}/${unHashedToken}`
+            `${req.protocol}://${req.get("host")}/api/v1/auth/forget-password/${unHashedToken}`
         )
     })
 
