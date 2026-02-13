@@ -24,9 +24,11 @@ app.use(cors({
 import healthCheckRouter from './routes/healthcheck.routes.js';
 import authRouter from './routes/auth.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
+import projectRouter from './routes/project.routes.js'
 
 app.use("/api/v1/healthcheck", healthCheckRouter)
 app.use("/api/v1/auth", authRouter)
+app/use("api/v1/projects", projectRouter)
 
 //Error handler middlweare should always be written at last
 app.use(errorHandler)
