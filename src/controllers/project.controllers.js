@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import mongoose from "mongoose";
-import { UserRolesEnum } from "../utils/constants.js";
+import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
 
 const getProjects = asyncHandler(async (req, res) => {
     const projects = await ProjectMember.aggregate([
@@ -214,16 +214,105 @@ const getProjectMembers = asyncHandler(async (req, res) => {
                     }
                 ]
             }
+        },
+        {
+            $addFields: {
+                user: {
+                    $arrayElemAt: ["$user", 0]
+                }
+            }
+        },
+        {
+            $project: {
+                project: 1,
+                user: 1,
+                role: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                _id: 0
+            }
         }
     ]);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            projectMembers,
+            "Project members fetched"
+        )
+    )
 });
 
 const updateMemberRole = asyncHandler(async (req, res) => {
-    //test
+    const {projectId, userId} = req.params;
+    const {newRole} = req.body;
+
+    if(!AvailableUserRole.includes(newRole)) {
+        throw new ApiError(400, "Invalid Role")
+    }
+
+    let projectMember = await ProjectMember.findOneAndUpdate(
+        {
+            user: new mongoose.Types.ObjectId(userId),
+            project: new mongoose.Types.ObjectId(projectId)
+        },
+        {
+            $set: {
+                role: newRole
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    if(!projectMember) {
+        throw new ApiError(400, "Project member not found")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            projectMember,
+            "Project Member Role Changed"
+        )
+    )
 });
 
 const deleteMember = asyncHandler(async (req, res) => {
-    //test
+    const {projectId, userId} = req.params;
+
+    let requester = await ProjectMember.findOne(
+        {
+            user: new mongoose.Types.ObjectId(req.user._id),
+            project: new mongoose.Types.ObjectId(projectId)
+        }
+    )
+
+    if(!requester || requester.role !== "admin") {
+        throw new ApiError(403, "Project can Only be deleted by admin")
+    }
+
+    if (req.user._id.toString() === userId) {
+        throw new ApiError(400, "Admin cannot remove himself");
+    }
+
+    let projectMember = await ProjectMember.findOneAndDelete({
+        user: new mongoose.Types.ObjectId(userId),
+        project: new mongoose.Types.ObjectId(projectId)
+    });
+
+    if(!projectMember) {
+        throw new ApiError(404, "Project member not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            projectMember,
+            "Member Deleted Successfully from Project"
+        )
+    )
 });
 
 export {
