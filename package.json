@@ -24,7 +24,9 @@
     "jsonwebtoken": "^9.0.3",
     "mailgen": "^2.0.32",
     "mongoose": "^8.22.1",
+    "morgan": "^1.10.1",
     "multer": "^2.0.2",
-    "nodemailer": "^8.0.1"
+    "nodemailer": "^8.0.1",
+    "winston": "^3.19.0"
   }
 }

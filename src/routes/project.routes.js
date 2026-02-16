@@ -5,7 +5,6 @@ import { validate } from "../middlewares/validator.middleware.js";
 import { createProjectValidator, addMemberToProjectValidator } from "../validators/index.js";
 import { validateProjectPermission } from "../middlewares/auth.middleware.js"
 import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
-import { User } from "../models/user.models.js";
 
 const router = Router();
 router.use(verifyJWT); // if you want to make all routes secured route so that every api call in this route is by varified users you can use router.use(verify) it will apply this middleware to all of them
